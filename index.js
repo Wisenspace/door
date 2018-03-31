@@ -1,5 +1,6 @@
 /* The express module is used to look at the address of the request and send it to the correct function */
 var express = require('express');
+var bodyParser = require('body-parser')
 
 /* The http module is used to listen for requests from a web browser */
 var http = require('http');
@@ -16,6 +17,7 @@ var server = http.createServer(app);
 /* Defines what port to use to listen to web requests */
 var port =  process.env.PORT ? parseInt(process.env.PORT) : 8080;
 
+app.use(bodyParser.json({ limit: '16mb' }));
 
 /* Defines what function to call when a request comes from the path '/' in http://localhost:8080 */
 app.get('/form', (req, res, next) => {
@@ -27,6 +29,11 @@ app.get('/form', (req, res, next) => {
 	res.sendFile(filePath);
 });
 
+
+app.post('/form', (req, res, next) => {
+  console.log(req.body);
+  res.send('OK')
+})
 
 /* Defines what function to all when the server recieves any request from http://localhost:8080 */
 server.on('listening', () => {
