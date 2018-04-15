@@ -17,11 +17,24 @@
   			<label>Password</label>
   			<input type='password' name='password'>
       </div>
+	  <div>
+  			<label>Verify Password</label>
+  			<input type='password' name='verify_password'>
+      </div>
       <div>
 			   <button>OK</button>
       </div>
 		</div>
     <script>
+	function verifyPassword() {
+		var $passwords = document.querySelectorAll('input[type="password"]');
+		var isSamePassword = $passwords[0].value === $passwords[1].value;
+		if(!isSamePassword) {
+		alert("Please enter the same password!")
+		}
+		return isSamePassword;
+	}
+
       function grabData() {
 
       	// Getting all the input tags
@@ -51,7 +64,9 @@
       }
 
       function sendData(data) {
-
+		  if(!verifyPassword()) {
+			 return;
+		  }
       	// Creating a new request to the server that contains the data
       	var req = new XMLHttpRequest();
 

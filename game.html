@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>GAME</title>
+		<style>
+			* {
+				padding: 0;
+				margin: 0;
+			}
+			body {
+				overflow: hidden;
+			}
+			canvas {
+				background: url('http://wisen.space/capture/load/5-XO21O-HWAmE_51AlMuoX4u.jpg') no-repeat center center fixed;
+				background-size: 100vw 100vh;
+			}
+
+			#chat {
+				position:fixed;
+				right: 2vw;
+				bottom: 2vh;
+				width:28vw;
+				height:80vh;
+			}
+
+			#chat button {
+				position:absolute;
+				right:2vw;
+				bottom:2vh;
+				width:1vw;
+				font-size:2vmax;
+				width:1em;
+				height:1em;
+				outline:none;
+				border:none;
+				cursor:pointer;
+				background-color:transparent;
+			}
+
+			#chat button:hover {
+				font-size:2.2vmax;
+			}
+
+			#chat input {
+				position:absolute;
+				right:5vw;
+				bottom:1.5vh;
+				width:20vw;
+				font-size:1.5vmax;
+				padding:0.5vmax;
+				color:white;
+				background-color:transparent;
+			}
+		</style>
+	</head>
+	<body>
+		<canvas></canvas>
+		<div id='chat'>
+			<ul></ul>
+			<div>
+				<input type='text'>
+				<button>🚀</button>
+			</div>
+		</div>
+		<script src='/js/socket.io.js'></script>
+		<script>
+			var socket = io();
+
+			socket.on('new message', function(message) {
+				var $ul = document.querySelector('#chat ul');
+				var $li = document.createElement('li');
+				$li.innerText = message;
+				$ul.appendChild($li)
+			});
+
+			var $button = document.querySelector('button');
+			var $input = document.querySelector('input');
+			$button.addEventListener('click', function() {
+				if($input.value) {
+					socket.emit('message', $input.value);
+					$input.value = '';
+				}
+			});
+
+			var $canvas = document.querySelector('canvas');
+			$canvas.width = window.screen.width;
+			$canvas.height = window.screen.height;
+		</script>
+
+	</body>
+</html>
