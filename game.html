@@ -59,32 +59,32 @@
 			<ul></ul>
 			<div>
 				<input type='text'>
-				<button>🚀</button>
 			</div>
 		</div>
 		<script src='/js/socket.io.js'></script>
 		<script>
 			var socket = io();
 
-			socket.on('new message', function(message) {
-				var $ul = document.querySelector('#chat ul');
-				var $li = document.createElement('li');
-				$li.innerText = message;
-				$ul.appendChild($li)
-			});
-
-			var $button = document.querySelector('button');
-			var $input = document.querySelector('input');
-			$button.addEventListener('click', function() {
-				if($input.value) {
-					socket.emit('message', $input.value);
-					$input.value = '';
-				}
-			});
-
 			var $canvas = document.querySelector('canvas');
 			$canvas.width = window.screen.width;
 			$canvas.height = window.screen.height;
+
+			var $input = document.querySelector('input');
+			document.body.addEventListener('keypress', sendMessage);
+
+			function sendMessage(e) {
+				if(e.key !== 'Enter') return;
+				if(document.activeElement.tagName !== 'INPUT' ) return;
+				if($input.value === '') return;
+				socket.emit('message', $input.value);
+				socket.on('newMessage', (message) => {
+					var $ul = document.querySelector('#chat ul');
+					var $li = document.createElement('li');
+					$li.innerText = message;
+					$ul.appendChild($li);
+				});
+				$input.value = '';
+			}
 		</script>
 
 	</body>

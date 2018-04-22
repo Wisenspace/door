@@ -14,6 +14,7 @@
         <div><label>Password</label><div>
         <div><input type='password' name='password'></div>
         <div><button>OK</button></div>
+
         <script>
         function grabData() {
 
@@ -43,35 +44,34 @@
           return data
         }
 
-function sendData(data) {
+        function sendData(data) {
 
-	// Creating a new request to the server that contains the data
-	var req = new XMLHttpRequest();
+        	// Creating a new request to the server that contains the data
+        	var req = new XMLHttpRequest();
 
-	// Opening up a connection with the server to 'POST' data
-	req.open('POST', '/login', true);
+        	// Opening up a connection with the server to 'POST' data
+        	req.open('POST', '/login', true);
 
-	// Explain to the server that we are sending the data in json format
-	req.setRequestHeader('content-type', 'application/json');
-	// Explain to the server that we are sending the data in json format
+        	// Explain to the server that we are sending the data in json format
+        	req.setRequestHeader('content-type', 'application/json');
+        	// Explain to the server that we are sending the data in json format
 
-	// Alert the user to any errors from the server
-	function readyStateChange() {
-		if(req.readyState !== 4) return;
-		if(req.status !== 200) return;
+        	// Alert the user to any errors from the server
+        	function readyStateChange() {
+        		if(req.readyState !== 4) return;
+        		if(req.status !== 200) return;
+                var body = JSON.parse(req.responseText);
+                if(body.error) {
+                    return alert(body.error);
+                }
+        		window.location.href = '/game';
+        	}
+        	req.onreadystatechange = readyStateChange;
 
-		data = JSON.parse(req.responseText);
-		if(data.error) {
-			return alert(data.error);
-		}
-		window.location.href = '/game';
-	}
-	req.onreadystatechange = readyStateChange;
+        	// Sending the data in JSON format
+        	req.send(JSON.stringify(data));
 
-	// Sending the data in JSON format
-	req.send(JSON.stringify(data));
-
-}
+        }
 
         function submit() {
           var formData = grabData();
