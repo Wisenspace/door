@@ -196,11 +196,15 @@ function startServer() {
 		if(!req.user) return res.send('ERROR');
 		usermodel.findOne({userName: req.params.username}, function(err, user) {
 			if(err) return res.send(err);
-			var imageType = user.picture.match(/^data\:image\/([a-zA-Z0-9]*);/)[1];
-			var base64Data = user.picture.split(',')[1];
-			var binaryData = new Buffer(base64Data, 'base64');
-			res.contentType('image/' + imageType);
-			res.end(binaryData, 'binary');
+			try {
+				var imageType = user.picture.match(/^data\:image\/([a-zA-Z0-9]*);/)[1];
+				var base64Data = user.picture.split(',')[1];
+				var binaryData = new Buffer(base64Data, 'base64');
+				res.contentType('image/' + imageType);
+				res.end(binaryData, 'binary');
+			} catch(ex) {
+				res.send(ex);
+			}
 		})
 
 	})
