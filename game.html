@@ -51,6 +51,13 @@
 				color:white;
 				background-color:transparent;
 			}
+
+			#logout {
+				position:fixed;
+				top:1em;
+				right:1em;
+				font-size:10vmin;
+			}
 		</style>
 	</head>
 	<body>
@@ -60,6 +67,9 @@
 			<div>
 				<input type='text'>
 			</div>
+		</div>
+		<div id='logout'>
+			<a href='/logout'>Log Out</a>
 		</div>
 		<script src='/js/socket.io.js'></script>
 		<script>
@@ -77,14 +87,16 @@
 				if(document.activeElement.tagName !== 'INPUT' ) return;
 				if($input.value === '') return;
 				socket.emit('message', $input.value);
-				socket.on('newMessage', (message) => {
-					var $ul = document.querySelector('#chat ul');
-					var $li = document.createElement('li');
-					$li.innerText = message;
-					$ul.appendChild($li);
-				});
+				console.log('called')
 				$input.value = '';
 			}
+
+			socket.on('newMessage', (message) => {
+				var $ul = document.querySelector('#chat ul');
+				var $li = document.createElement('li');
+				$li.innerText = message;
+				$ul.appendChild($li);
+			});
 		</script>
 
 	</body>

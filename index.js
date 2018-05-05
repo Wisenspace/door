@@ -5,6 +5,9 @@ var mongoose = require('mongoose');
 var crypto = require('crypto');
 var Io = require('socket.io');
 var usermodel = require('./user.js').getModel();
+var passport = require('passport');
+var LocalStrategy = require('passport-local').Strategy;
+var session = require('express-session');
 
 /* The http module is used to listen for requests from a web browser */
 var http = require('http');
@@ -41,9 +44,10 @@ function addSockets() {
 	});
 }
 
-
 function startServer() {
 	addSockets();
+
+	var i = 0;
 
 	function authenticateUser(username, password, callback) {
 		if(!username) return callback('No username provided');
@@ -53,30 +57,52 @@ function startServer() {
 			if(user.userName !== username) return callback('Username does not exist');
 			crypto.pbkdf2(password, user.salt, 10000, 256, 'sha256', function(err, hash) {
 				if(err) return callback('Error hashing password');
-				if(password !== hash.toString('base64')) return callback('Wrong password');
-				callback(null);
+				if(user.password !== hash.toString('base64')) return callback('Wrong password');
+				callback(null, user);
 			});
-
-		})
+		});
 	}
 
 	app.use(bodyParser.json({ limit: '16mb' }));
 	app.use(express.static(path.join(__dirname, 'public')));
+	app.use(session({secret: '🦋🦋🦋🦋🦋🦋🦋🦋'}));
+	app.use(passport.initialize());
+	app.use(passport.session());
 
-	app.post('/login', (req, res, next) => {
+	passport.use(new LocalStrategy({
+		usernameField: 'userName'
+		, passwordField: 'password'
+	}, authenticateUser));
 
-		var username = req.body.userName;
-		var password = req.body.password;
-
-		authenticateUser(username, password, function(err) {
-			res.send({error: err});
-		});
-
+	passport.serializeUser(function(user, done) {
+		done(null, user.id);
 	});
+
+	passport.deserializeUser(function(id, done) {
+		usermodel.findById(id, function(err, user) {
+			done(err, user);
+		});
+	});
+
 
 	app.get('/login', (req, res, next) => {
 		var filePath = path.join(__dirname, './login.html');
 		res.sendFile(filePath);
+	});
+
+	app.get('/logout', (req, res, next) => {
+		req.logOut();
+		res.redirect('/login');
+	})
+
+	app.post('/login', (req, res, next) => {
+		passport.authenticate('local', function(err, user) {
+			if(err) return res.send({error: err});
+			req.logIn(user, (err) => {
+				if(err) res.send({error: err});
+				res.send({error: null});
+			});
+		})(req, res, next)
 	});
 
 	/* Defines what function to call when a request comes from the path '/' in http://localhost:8080 */
@@ -121,14 +147,15 @@ function startServer() {
 	  		});
 	  	});
 
-  	});
+	});
 
 	app.get('/game', (req, res, next) => {
-
+		if(!req.user) res.redirect('/login');
 		var filePath = path.join(__dirname, './game.html')
 		res.sendFile(filePath);
-
 	});
+
+
 
 	/* Defines what function to all when the server recieves any request from http://localhost:8080 */
 	server.on('listening', () => {
