@@ -52,11 +52,18 @@
 				background-color:transparent;
 			}
 
+			#chat ul > li {
+				list-style-type: none;
+			}
+
+			#chat strong {
+				text-transform: uppercase;
+			}
+
 			#logout {
 				position:fixed;
 				top:1em;
 				right:1em;
-				font-size:10vmin;
 			}
 		</style>
 	</head>
@@ -73,7 +80,9 @@
 		</div>
 		<script src='/js/socket.io.js'></script>
 		<script>
-			var socket = io();
+
+			var user = '{{USER}}';
+			var socket = io({query: {user: user}});
 
 			var $canvas = document.querySelector('canvas');
 			$canvas.width = window.screen.width;
@@ -83,21 +92,26 @@
 			document.body.addEventListener('keypress', sendMessage);
 
 			function sendMessage(e) {
+
 				if(e.key !== 'Enter') return;
 				if(document.activeElement.tagName !== 'INPUT' ) return;
 				if($input.value === '') return;
-				socket.emit('message', $input.value);
-				console.log('called')
+				socket.emit('message', {message: $input.value, user: user});
 				$input.value = '';
+
 			}
 
 			socket.on('newMessage', (message) => {
+
 				var $ul = document.querySelector('#chat ul');
 				var $li = document.createElement('li');
-				$li.innerText = message;
+				$li.innerHTML = `<strong>${message.user}:</strong> ${message.message}`;
 				$ul.appendChild($li);
+
 			});
+
 		</script>
+		<script src='/js/game.js'></script>
 
 	</body>
 </html>

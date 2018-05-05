@@ -8,6 +8,7 @@ var usermodel = require('./user.js').getModel();
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var session = require('express-session');
+var fs = require('fs');
 
 /* The http module is used to listen for requests from a web browser */
 var http = require('http');
@@ -33,21 +34,43 @@ var dbAddress = process.env.MONGODB_URI || 'mongodb://127.0.0.1/game';
 
 function addSockets() {
 
+	var players = {};
+
 	io.on('connection', (socket) => {
-		console.log('user connected')
+		var user = socket.handshake.query.user;
+		if(players[user]) return;
+		players[user] = {
+			x: 0, y: 0
+		}
+		io.emit('newMessage', {user: user, message: 'Entered the game'});
+
+		/* UPDATE ALL BROWSERS THAT A NEW PLAYER HAS JOINED */
+		io.emit('playerUpdate', players);
+
 		socket.on('disconnect', () => {
-			console.log('user disconnected');
+			delete players[user];
+			io.emit('newMessage', {user: user, message: 'Left game'});
+
+			/* UPDATE ALL BROWSERS THAT A PLAYER HAS LEFT THE GAME */
+			io.emit('playerUpdate', players);
 		});
+
 		socket.on('message', (message) => {
 			io.emit('newMessage', message);
 		});
+
+		/* RECIEVED A PLAYER UPDATE FROM A BROWSER */
+		socket.on('playerUpdate', (player) => {
+			players[user] = player;
+			/* UPDATE ALL BROWSERS THAT A PLAYER HAS MOVED */
+			io.emit('playerUpdate', players);
+		});
 	});
+
 }
 
 function startServer() {
 	addSockets();
-
-	var i = 0;
 
 	function authenticateUser(username, password, callback) {
 		if(!username) return callback('No username provided');
@@ -99,7 +122,7 @@ function startServer() {
 		passport.authenticate('local', function(err, user) {
 			if(err) return res.send({error: err});
 			req.logIn(user, (err) => {
-				if(err) res.send({error: err});
+				if(err) return res.send({error: err});
 				res.send({error: null});
 			});
 		})(req, res, next)
@@ -143,19 +166,44 @@ function startServer() {
 	  			if(err) {
 	  				return res.send({error: err.message});
 	  			}
-	  			res.send({error: null});
+
+				passport.authenticate('local', function(err, user) {
+
+					if(err) return res.send({error: err});
+					req.logIn(user, (err) => {
+						if(err) return res.send({error: err});
+						res.send({error: null});
+					});
+
+				})(req, res, next)
 	  		});
 	  	});
 
 	});
 
 	app.get('/game', (req, res, next) => {
-		if(!req.user) res.redirect('/login');
-		var filePath = path.join(__dirname, './game.html')
-		res.sendFile(filePath);
+
+		if(!req.user) return res.redirect('/login');
+		var filePath = path.join(__dirname, './game.html');
+		var fileContents = fs.readFileSync(filePath, 'utf8');
+		fileContents = fileContents.replace('{{USER}}', req.user.userName);
+		res.send(fileContents);
+
 	});
 
+	app.get('/picture/:username', (req, res, next) => {
 
+		if(!req.user) return res.send('ERROR');
+		usermodel.findOne({userName: req.params.username}, function(err, user) {
+			if(err) return res.send(err);
+			var imageType = user.picture.match(/^data\:image\/([a-zA-Z0-9]*);/)[1];
+			var base64Data = user.picture.split(',')[1];
+			var binaryData = new Buffer(base64Data, 'base64');
+			res.contentType('image/' + imageType);
+			res.end(binaryData, 'binary');
+		})
+
+	})
 
 	/* Defines what function to all when the server recieves any request from http://localhost:8080 */
 	server.on('listening', () => {

@@ -2,92 +2,138 @@
 <html>
 	<head>
 		<title>Wisen Game</title>
+		<style>
+			#preview img {
+				width:5vmax;
+				height:5vmax;
+			}
+		</style>
 	</head>
 	<body>
 		<div>
-      <div>
-  			<label>Username</label>
-  			<input type='text' name='userName'>
-      </div>
-      <div>
-  			<label>Email</label>
-  			<input type='text' name='email'>
-      </div>
-      <div>
-  			<label>Password</label>
-  			<input type='password' name='password'>
-      </div>
-	  <div>
-  			<label>Verify Password</label>
-  			<input type='password' name='verify_password'>
-      </div>
-      <div>
-			   <button>OK</button>
-      </div>
+			<div>
+				<label>Username</label>
+				<input type='text' name='userName'>
+			</div>
+			<div>
+				<label>Email</label>
+				<input type='text' name='email'>
+			</div>
+			<div>
+				<label>Password</label>
+				<input type='password' name='password'>
+			</div>
+			<div>
+				<label>Verify Password</label>
+				<input type='password' name='verify_password'>
+			</div>
+			<div>
+
+				<label>Character</label>
+				<input type="file" name="picture" accept="image/*">
+				<div id='preview'></div>
+
+			</div>
+			<div>
+				<button>OK</button>
+			</div>
 		</div>
-    <script>
-	function verifyPassword() {
-		var $passwords = document.querySelectorAll('input[type="password"]');
-		var isSamePassword = $passwords[0].value === $passwords[1].value;
-		if(!isSamePassword) {
-		alert("Please enter the same password!")
-		}
-		return isSamePassword;
-	}
+		<script>
+			function verifyPassword() {
+				var $passwords = document.querySelectorAll('input[type="password"]');
+				var isSamePassword = $passwords[0].value === $passwords[1].value;
+				if(!isSamePassword) {
+				alert("Please enter the same password!")
+				}
+				return isSamePassword;
+			}
 
-      function grabData() {
+			function grabData() {
 
-      	// Getting all the input tags
-      	var $inputs = document.querySelectorAll('input');
+				// Getting all the input tags
+				var $inputs = document.querySelectorAll('input');
 
-      	// Defining a variable to store all the data
-      	var data = {};
+				// Defining a variable to store all the data
+				var data = {};
 
-      	// Looping through all the input tags
-      	for(var i = 0; i < $inputs.length; i++) {
+				// Looping through all the input tags
+				for(var i = 0; i < $inputs.length; i++) {
+					var $input = $inputs[i];
+					if($input.type === 'text' || $input.type === 'password') {
+						data[$input.name] =  $input.value;
+					} else if($input.type === 'checkbox') {
+						data[$input.name] =  $input.checked;
+					} else if ($input.type === 'radio' && $input.checked) {
+						data[$input.name] = $input.getAttribute('answer');
+					} else if ($input.type === 'file' && imageData) {
+						data[$input.name] = imageData
+					}
+				}
 
-      		// Getting the ith input tag
-      		var $input = $inputs[i];
+				// Outputting the data
+				return data
+			}
 
-      		// Getting the name of the data that the input tag holds
-      		var name = $input.name;
+			function sendData(data) {
+				if(!verifyPassword()) {
+					return;
+				}
+				// Creating a new request to the server that contains the data
+				var req = new XMLHttpRequest();
 
-      		// Getting the value that the user entered into the input tag
-      		var value = $input.value;
+				// Opening up a connection with the server to 'POST' data
+				req.open('POST', '/form', true);
 
-      		// Storing the value and its name
-      		data[name] = value
-      	}
+				// Explain to the server that we are sending the data in json format
+				req.setRequestHeader('content-type', 'application/json')
 
-      	// Outputting the data
-      	return data
-      }
+				function readyStateChange() {
 
-      function sendData(data) {
-		  if(!verifyPassword()) {
-			 return;
-		  }
-      	// Creating a new request to the server that contains the data
-      	var req = new XMLHttpRequest();
+					if(req.readyState !== 4) return;
+					if(req.status !== 200) return;
+					var body = JSON.parse(req.responseText);
+					if(body.error) {
+						return alert(body.error);
+					}
+					window.location.href = '/game';
 
-      	// Opening up a connection with the server to 'POST' data
-      	req.open('POST', '/form', true);
+				}
+				req.onreadystatechange = readyStateChange;
 
-      	// Explain to the server that we are sending the data in json format
-      	req.setRequestHeader('content-type', 'application/json')
+				// Sending the data in JSON format
+				req.send(JSON.stringify(data));
 
-      	// Sending the data in JSON format
-      	req.send(JSON.stringify(data));
-      }
 
-      function submit() {
-      	var formData = grabData();
-      	sendData(formData);
-      }
+			}
 
-      var $button = document.querySelector('button')
-      $button.addEventListener('click', submit)
+			function submit() {
 
-      </script>
+				var formData = grabData();
+				if(!formData.picture) return alert('Please upload a picture');
+				sendData(formData);
+
+			}
+
+			var $button = document.querySelector('button');
+			$button.addEventListener('click', submit);
+
+			var $pictureInput = document.querySelector('input[name=picture]');
+			var $preview = document.querySelector('#preview');
+			var imageData;
+			$pictureInput.addEventListener('change', previewImage);
+
+			function previewImage() {
+
+				var fileReader = new FileReader();
+				fileReader.onload = function(e) {
+					var $img = document.createElement('img');
+					$img.src = imageData = e.target.result;
+					$preview.innerHTML = '';
+					$preview.appendChild($img);
+				}
+				fileReader.readAsDataURL($pictureInput.files[0]);
+
+			}
+		</script>
 	</body>
 </html>
