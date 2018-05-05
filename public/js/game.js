@@ -19,7 +19,15 @@ function updatePlayers(players) {
 		gamePiece.y = player.y;
 	});
 
+	var gamePieceNames = Object.keys(gamePieces);
+	gamePieceNames.forEach(function(gamePieceName) {
+		if(!players[gamePieceName]) {
+			delete gamePieces[gamePieceName];
+		}
+	})
+
 }
+
 
 function createNewPlayer(playerName) {
 
@@ -54,6 +62,7 @@ function animate() {
 }
 
 function updatePlayerPosition(e) {
+
 	var gamePiece = gamePieces[user];
 	switch(e.key) {
 		case 'ArrowLeft':
@@ -72,6 +81,7 @@ function updatePlayerPosition(e) {
 			return;
 	}
 	socket.emit('playerUpdate', {x: gamePiece.x, y: gamePiece.y});
+
 }
 
 document.body.addEventListener('keydown', updatePlayerPosition);
